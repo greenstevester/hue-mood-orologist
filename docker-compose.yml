@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  hue-mood-orologist:
+    build: .
+    image: hue-mood-orologist:latest
+    container_name: hue-mood-orologist
+    ports:
+      - "8080:8080"
+    environment:
+      # Spring profile
+      - SPRING_PROFILES_ACTIVE=docker
+      
+      # Hue Bridge Configuration
+      - HUE_API_KEY=${HUE_API_KEY:-YOUR_API_KEY_HERE}
+      - HUE_BRIDGE_IP=${HUE_BRIDGE_IP:-}
+      - HUE_TARGET_ALL_LIGHTS=${HUE_TARGET_ALL_LIGHTS:-true}
+      - HUE_TARGET_LIGHT_NAME=${HUE_TARGET_LIGHT_NAME:-}
+      - HUE_DEBUG_COLORS=${HUE_DEBUG_COLORS:-false}
+      
+      # Weather Configuration
+      - WEATHER_COLD_THRESHOLD=${WEATHER_COLD_THRESHOLD:-5.0}
+      - WEATHER_RAIN_PROBABILITY_THRESHOLD=${WEATHER_RAIN_PROBABILITY_THRESHOLD:-30}
+      - WEATHER_RAIN_AMOUNT_THRESHOLD=${WEATHER_RAIN_AMOUNT_THRESHOLD:-0.1}
+      
+      # Schedule Configuration
+      - SCHEDULE_INTERVAL=${SCHEDULE_INTERVAL:-HOUR}
+      
+      # Color Mapping
+      - COLOR_MAPPING_ENABLED=${COLOR_MAPPING_ENABLED:-true}
+      - COLOR_MAPPING_CONDITIONS_RAIN=${COLOR_MAPPING_CONDITIONS_RAIN:-light purple}
+      - COLOR_MAPPING_CONDITIONS_SHOWERS=${COLOR_MAPPING_CONDITIONS_SHOWERS:-dark purple}
+      - COLOR_MAPPING_CONDITIONS_SUNSHINE=${COLOR_MAPPING_CONDITIONS_SUNSHINE:-yellow}
+      - COLOR_MAPPING_CONDITIONS_OVERCAST=${COLOR_MAPPING_CONDITIONS_OVERCAST:-grey}
+      - COLOR_MAPPING_CONDITIONS_SNOW=${COLOR_MAPPING_CONDITIONS_SNOW:-white}
+      - COLOR_MAPPING_CONDITIONS_COLD=${COLOR_MAPPING_CONDITIONS_COLD:-blue}
+      - COLOR_MAPPING_CONDITIONS_CLEAR=${COLOR_MAPPING_CONDITIONS_CLEAR:-white}
+      
+      # JVM Memory settings for container
+      - JAVA_OPTS=-Xmx512m -Xms256m
+      
+    volumes:
+      # Mount logs directory
+      - ./docker-logs:/app/logs
+      
+    networks:
+      - hue-network
+      
+    restart: unless-stopped
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+        reservations:
+          memory: 512M
+
+networks:
+  hue-network:
+    driver: bridge

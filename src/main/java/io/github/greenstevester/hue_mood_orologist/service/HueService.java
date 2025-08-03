@@ -236,4 +236,97 @@ public class HueService {
         
         return targetLights;
     }
+    
+    public void debugLightColors() {
+        getHueConnection().ifPresentOrElse(
+            hueConnection -> {
+                try {
+                    log.info("=== LIGHT COLOR DEBUG MODE ===");
+                    
+                    // Refresh to get latest state
+                    hueConnection.refresh();
+                    
+                    Map<UUID, Light> allLights = hueConnection.getLights();
+                    if (allLights.isEmpty()) {
+                        log.info("No lights found on the Hue bridge");
+                        return;
+                    }
+                    
+                    log.info("Found {} lights - Reading current color and state information:", allLights.size());
+                    log.info("");
+                    
+                    allLights.forEach((uuid, light) -> {
+                        try {
+                            log.info("Light: {} (ID: {})", light.getName(), uuid);
+                            log.info("  - Power: {}", light.isOn() ? "ON" : "OFF");
+                            log.info("  - Owner ID: {}", light.getOwnerId() != null ? light.getOwnerId() : "N/A");
+                            
+                            // Try to get detailed state through reflection or toString inspection
+                            String lightDetails = light.toString();
+                            if (lightDetails.contains("color") || lightDetails.contains("rgb") || lightDetails.contains("xy")) {
+                                log.info("  - Raw state: {}", lightDetails);
+                            } else {
+                                log.info("  - Note: Detailed color information not directly available through API");
+                                log.info("    Use Philips Hue app to view current colors");
+                            }
+                            
+                            // Log supported effects
+                            var supportedEffects = light.getSupportedEffects();
+                            if (!supportedEffects.isEmpty()) {
+                                log.info("  - Supported effects: {}", supportedEffects);
+                            }
+                            
+                            log.info("");
+                            
+                        } catch (Exception e) {
+                            log.error("  - Error reading light state: {}", e.getMessage());
+                        }
+                    });
+                    
+                    log.info("=== END LIGHT COLOR DEBUG ===");
+                    
+                } catch (Exception e) {
+                    log.error("Error during light color debug", e);
+                }
+            },
+            () -> log.warn("No Hue connection available for debug")
+        );
+    }
+    
+    public void debugLightColorsWithRawApi() {
+        getHueConnection().ifPresentOrElse(
+            hueConnection -> {
+                try {
+                    log.info("=== RAW API LIGHT DEBUG MODE ===");
+                    
+                    // Get bridge IP and API key for direct API calls
+                    String bridgeIp = hueProperties.getBridgeIp();
+                    String apiKey = hueProperties.getApiKey();
+                    
+                    if (bridgeIp == null || apiKey == null) {
+                        log.warn("Bridge IP or API key not available for raw API calls");
+                        return;
+                    }
+                    
+                    log.info("Bridge IP: {}", bridgeIp);
+                    log.info("Making direct API calls to retrieve detailed light state...");
+                    log.info("");
+                    log.info("Raw API endpoints for manual inspection:");
+                    log.info("  - All lights: http://{}/api/{}/lights", bridgeIp, apiKey);
+                    log.info("  - Light state: http://{}/api/{}/lights/[LIGHT_ID]", bridgeIp, apiKey);
+                    log.info("");
+                    log.info("Use curl or browser to inspect detailed color information:");
+                    log.info("  curl http://{}/api/{}/lights", bridgeIp, apiKey);
+                    log.info("");
+                    log.info("Look for 'state' -> 'xy', 'hue', 'sat', 'bri' values in the JSON response");
+                    
+                    log.info("=== END RAW API DEBUG ===");
+                    
+                } catch (Exception e) {
+                    log.error("Error during raw API debug", e);
+                }
+            },
+            () -> log.warn("No Hue connection available for raw API debug")
+        );
+    }
 }

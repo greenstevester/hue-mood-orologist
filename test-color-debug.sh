@@ -1,0 +1,55 @@
+#!/bin/bash
+
+echo "=== Testing Hue Color Debug Feature ==="
+echo ""
+
+echo "This script tests the new color debug functionality that:"
+echo "1. Reads current light colors and RGB settings"
+echo "2. Displays detailed light state information"
+echo "3. Provides raw API endpoints for manual inspection"
+echo ""
+
+echo "Test 1: Enable debug mode on startup"
+echo "Command: ./gradlew bootRun --args=\"--hue.debug-colors=true --hue.api-key=YOUR_API_KEY --hue.bridge-ip=10.0.0.101\""
+echo ""
+
+echo "Test 2: Debug with specific light targeting"
+echo "Command: ./gradlew bootRun --args=\"--hue.debug-colors=true --hue.target-all-lights=false --hue.target-light-name=Living Room --hue.api-key=YOUR_API_KEY\""
+echo ""
+
+echo "Test 3: Debug with color mapping enabled"
+echo "Command: ./gradlew bootRun --args=\"--hue.debug-colors=true --color-mapping.enabled=true --hue.api-key=YOUR_API_KEY\""
+echo ""
+
+echo "Expected debug output:"
+echo "- === LIGHT COLOR DEBUG MODE ==="
+echo "- Light names, IDs, and power status"
+echo "- Available color information from API"
+echo "- Supported effects for each light"
+echo "- === RAW API LIGHT DEBUG MODE ==="
+echo "- Bridge IP and API endpoints"
+echo "- curl commands for manual inspection"
+echo "- Instructions for reading xy, hue, sat, bri values"
+echo ""
+
+echo "Manual testing commands:"
+echo ""
+echo "1. Run with debug enabled:"
+echo "   ./gradlew bootRun --args=\"--hue.debug-colors=true --hue.api-key=YOUR_API_KEY_HERE --hue.bridge-ip=YOUR_BRIDGE_IP\""
+echo ""
+echo "2. Use curl to inspect raw API (replace YOUR_BRIDGE_IP and YOUR_API_KEY):"
+echo "   curl http://YOUR_BRIDGE_IP/api/YOUR_API_KEY/lights"
+echo ""
+echo "3. Check specific light state (replace LIGHT_ID):"
+echo "   curl http://YOUR_BRIDGE_IP/api/YOUR_API_KEY/lights/LIGHT_ID"
+echo ""
+
+echo "Debug feature shows:"
+echo "- Current power state (ON/OFF)"
+echo "- Light names and UUIDs"
+echo "- Available color information from huevana library"
+echo "- Raw API endpoints for detailed RGB/xy/hue/saturation inspection"
+echo "- Troubleshooting guidance for color mapping"
+echo ""
+
+echo "Note: Add your actual API key and bridge IP to test with real lights!"

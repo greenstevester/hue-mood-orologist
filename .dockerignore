@@ -1,0 +1,54 @@
+# Gradle build files
+.gradle/
+build/
+!build/libs/*.jar
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Test files
+src/test/
+test-*.sh
+
+# Logs
+*.log
+logs/
+docker-logs/
+
+# Environment files
+.env
+*.env.local
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~
+
+# Scripts (except necessary ones)
+*.sh
+!gradlew
+
+# Docker files (for build context)
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml

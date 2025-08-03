@@ -134,6 +134,7 @@ color-mapping.default-color=white
 | `hue.app-name` | `HueMoodOrologist` | Application name registered with bridge |
 | `hue.auto-discover-bridge` | `true` | Enable automatic bridge discovery |
 | `hue.discovery-timeout` | `10` | Timeout (seconds) for bridge discovery |
+| `hue.debug-colors` | `false` | Enable color debug mode on startup |
 
 ### Color Mapping Settings
 
@@ -187,6 +188,20 @@ Use the original rain/cold logic instead of color mapping:
 ./gradlew bootRun --args="--hue.api-key=YOUR_API_KEY --color-mapping.enabled=false"
 ```
 
+### Debug Current Light Colors
+Enable debug mode to inspect current light colors and RGB settings:
+
+```bash
+./gradlew bootRun --args="--hue.api-key=YOUR_API_KEY --hue.debug-colors=true"
+```
+
+This displays:
+- Current power state (ON/OFF) for each light
+- Light names and IDs  
+- Available color information from the Hue API
+- Raw API endpoints for manual inspection with curl
+- Troubleshooting guidance for color mapping issues
+
 ## Running Scripts
 
 The project includes convenient shell scripts:
@@ -200,6 +215,9 @@ The project includes convenient shell scripts:
 
 # Test light targeting options
 ./test-targeting.sh
+
+# Test color debug feature
+./test-color-debug.sh
 ```
 
 ## Sample Configuration
@@ -223,6 +241,7 @@ hue.target-light-name=Living Room
 hue.app-name=HueMoodOrologist
 hue.auto-discover-bridge=true
 hue.discovery-timeout=10
+hue.debug-colors=false
 
 # Schedule Configuration
 schedule.interval=HOUR
@@ -267,9 +286,27 @@ logging.level.io.github.greenstevester.hue_mood_orologist=INFO
 ### Create Docker Image
 
 ```bash
+# Quick start with Docker
+./docker-build-and-run.sh -k YOUR_API_KEY_HERE -b YOUR_BRIDGE_IP
+
+# Manual Docker build
 ./gradlew bootBuildImage
-docker run --rm hue-mood-orologist:0.0.1-SNAPSHOT
+# OR
+docker build -t hue-mood-orologist:latest .
+
+# Run with Docker
+docker run -d \
+  --name hue-mood-orologist \
+  -p 8080:8080 \
+  -e HUE_API_KEY=YOUR_API_KEY_HERE \
+  -e HUE_BRIDGE_IP=192.168.1.100 \
+  hue-mood-orologist:latest
+
+# Using Docker Compose
+docker-compose up -d
 ```
+
+For detailed Docker setup instructions, see [DOCKER.md](DOCKER.md).
 
 ## Troubleshooting
 

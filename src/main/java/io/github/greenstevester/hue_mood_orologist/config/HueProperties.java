@@ -15,4 +15,5 @@ public class HueProperties {
     private int discoveryTimeout = 10;
     private String targetLightName;
     private boolean targetAllLights = true;
+    private boolean debugColors = false;
 }
