@@ -17,4 +17,7 @@ public class WeatherAnalysis {
     private double currentTemperature;
     private double minTemperature;
     private String summary;
+    
+    // New field for specific weather condition mapping
+    private String weatherCondition;
 }

@@ -1,8 +1,12 @@
 package io.github.greenstevester.hue_mood_orologist.service;
 
+import io.github.greenstevester.hue_mood_orologist.config.ColorMappingProperties;
 import io.github.greenstevester.hue_mood_orologist.config.HueProperties;
+import io.github.greenstevester.hue_mood_orologist.model.WeatherAnalysis;
+import io.github.greenstevester.heuvana.Color;
 import io.github.greenstevester.heuvana.HueBridge;
 import io.github.greenstevester.heuvana.HueBridgeConnectionBuilder;
+import io.github.greenstevester.heuvana.v2.UpdateState;
 import io.github.greenstevester.heuvana.discovery.HueBridgeDiscoveryService;
 import io.github.greenstevester.heuvana.v2.Hue;
 import io.github.greenstevester.heuvana.v2.Light;
@@ -23,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 public class HueService {
     
     private final HueProperties hueProperties;
+    private final ColorMappingProperties colorMappingProperties;
+    private final ColorParserService colorParserService;
     private Hue hue;
     
     public Optional<Hue> getHueConnection() {
@@ -120,7 +126,7 @@ public class HueService {
         );
     }
     
-    public void setLightMoodForWeather(boolean isRaining, boolean isCold) {
+    public void setLightMoodForWeather(WeatherAnalysis weatherAnalysis) {
         getHueConnection().ifPresent(hueConnection -> {
             try {
                 Map<UUID, Light> allLights = hueConnection.getLights();
@@ -131,23 +137,19 @@ public class HueService {
                     return;
                 }
                 
-                log.info("Controlling {} light(s)", targetLights.size());
+                log.info("Controlling {} light(s) for weather condition: {}", 
+                    targetLights.size(), weatherAnalysis.getWeatherCondition());
+                
+                // Determine color to use
+                Color lightColor = determineColorForWeather(weatherAnalysis);
                 
                 targetLights.values().forEach(light -> {
                     try {
-                        if (isRaining) {
-                            // Blue/grey mood for rain
-                            light.turnOn();
-                            log.info("Set {} to rainy mood", light.getName());
-                        } else if (isCold) {
-                            // Warm orange/yellow for cold weather
-                            light.turnOn();
-                            log.info("Set {} to cold weather mood", light.getName());
-                        } else {
-                            // Normal white light for good weather
-                            light.turnOn();
-                            log.info("Set {} to normal mood", light.getName());
-                        }
+                        light.setState(new UpdateState().color(lightColor).on());
+                        log.info("Set {} to {} mood (RGB: {})", 
+                            light.getName(), 
+                            weatherAnalysis.getWeatherCondition(),
+                            lightColor.toString());
                     } catch (Exception e) {
                         log.error("Error controlling light: {}", light.getName(), e);
                     }
@@ -156,6 +158,50 @@ public class HueService {
                 log.error("Error setting light mood", e);
             }
         });
+    }
+    
+    public void setLightMoodForWeather(boolean isRaining, boolean isCold) {
+        // Legacy method for backward compatibility
+        WeatherAnalysis legacyAnalysis = WeatherAnalysis.builder()
+            .isRaining(isRaining)
+            .isVeryCold(isCold)
+            .weatherCondition(isRaining ? "rain" : (isCold ? "cold" : "clear"))
+            .build();
+        setLightMoodForWeather(legacyAnalysis);
+    }
+    
+    private Color determineColorForWeather(WeatherAnalysis weatherAnalysis) {
+        String weatherCondition = weatherAnalysis.getWeatherCondition();
+        
+        // Use color mapping if enabled and condition is mapped
+        if (colorMappingProperties.isEnabled() && weatherCondition != null) {
+            String mappedColor = colorMappingProperties.getConditions().get(weatherCondition.toLowerCase());
+            if (mappedColor != null) {
+                log.debug("Using mapped color '{}' for condition '{}'", mappedColor, weatherCondition);
+                return colorParserService.parseColor(mappedColor);
+            }
+            
+            // If mapping enabled but condition not found, use default
+            if (!colorMappingProperties.getConditions().isEmpty()) {
+                log.debug("No mapping found for condition '{}', using default color '{}'", 
+                    weatherCondition, colorMappingProperties.getDefaultColor());
+                return colorParserService.parseColor(colorMappingProperties.getDefaultColor());
+            }
+        }
+        
+        // Fallback to legacy logic if mapping disabled or no mappings configured
+        log.debug("Using legacy color logic for weather condition '{}'", weatherCondition);
+        return getLegacyColorForWeather(weatherAnalysis);
+    }
+    
+    private Color getLegacyColorForWeather(WeatherAnalysis weatherAnalysis) {
+        if (weatherAnalysis.isRaining()) {
+            return Color.of(100, 149, 237); // Cornflower blue for rain
+        } else if (weatherAnalysis.isVeryCold()) {
+            return Color.of(255, 140, 0);   // Dark orange for cold
+        } else {
+            return Color.of(255, 255, 255); // White for normal weather
+        }
     }
     
     private Map<UUID, Light> getTargetLights(Map<UUID, Light> allLights) {

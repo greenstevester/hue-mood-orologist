@@ -105,13 +105,19 @@ public class WeatherService {
         double minTemp = minTempOpt.orElse(currentTemp);
         boolean willBeVeryCold = minTemp < coldThreshold;
         
+        // Determine specific weather condition
+        String weatherCondition = determineWeatherCondition(
+            currentTemp, currentPrecipitation, currentPrecipProb, 
+            maxPrecipAmount, maxPrecipProb, isRaining, isVeryCold
+        );
+        
         // Create summary
         String summary = createWeatherSummary(
             isRaining, willRainSoon, maxPrecipProb, 
             isVeryCold, willBeVeryCold, currentTemp, minTemp
         );
         
-        log.info("Weather analysis complete: {}", summary);
+        log.info("Weather analysis complete: {} (condition: {})", summary, weatherCondition);
         
         return WeatherAnalysis.builder()
             .analysisTime(LocalDateTime.now())
@@ -124,6 +130,7 @@ public class WeatherService {
             .currentTemperature(currentTemp)
             .minTemperature(minTemp)
             .summary(summary)
+            .weatherCondition(weatherCondition)
             .build();
     }
     
@@ -154,10 +161,55 @@ public class WeatherService {
         return summary.toString().trim();
     }
     
+    private String determineWeatherCondition(double currentTemp, double currentPrecip, int currentPrecipProb,
+                                           double maxPrecipAmount, int maxPrecipProb, 
+                                           boolean isRaining, boolean isVeryCold) {
+        
+        // Snow conditions (cold + precipitation)
+        if (currentTemp <= 0 && (currentPrecip > 0.1 || currentPrecipProb > 20)) {
+            return "snow";
+        }
+        
+        // Rain conditions based on intensity
+        if (isRaining || maxPrecipAmount > rainAmountThreshold || maxPrecipProb > rainProbabilityThreshold) {
+            if (maxPrecipAmount > 2.0 || maxPrecipProb > 70) {
+                return "showers"; // Heavy precipitation
+            } else {
+                return "rain"; // Light to moderate precipitation
+            }
+        }
+        
+        // Temperature-based conditions when no precipitation
+        if (isVeryCold) {
+            return "cold"; // Very cold but dry
+        }
+        
+        // Cloud/visibility conditions based on temperature ranges and lack of precipitation
+        if (currentTemp > 25) {
+            return "sunshine"; // Hot and clear
+        } else if (currentTemp > 15) {
+            // Moderate temperature - check if it might be overcast
+            // If low precipitation probability but not sunny, likely overcast
+            if (maxPrecipProb > 10 && maxPrecipProb < 30) {
+                return "overcast";
+            } else {
+                return "clear"; // Clear moderate weather
+            }
+        } else {
+            // Cool temperature
+            if (maxPrecipProb > 20) {
+                return "overcast"; // Cool and cloudy
+            } else {
+                return "clear"; // Cool but clear
+            }
+        }
+    }
+    
     private WeatherAnalysis createErrorAnalysis(String error) {
         return WeatherAnalysis.builder()
             .analysisTime(LocalDateTime.now())
             .summary("Error: " + error)
+            .weatherCondition("unknown")
             .build();
     }
 }

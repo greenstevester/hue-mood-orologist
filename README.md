@@ -10,6 +10,7 @@ Automatically sync your Philips Hue lights with weather conditions. Rain makes l
 
 - 🌦️ **Automatic weather monitoring** using Open-Meteo API (Zurich, Switzerland)
 - 💡 **Smart light control** based on weather conditions
+- 🎨 **Configurable weather-to-color mapping** - define custom colors for each weather condition
 - ⏰ **Configurable check intervals** (every minute to every 12 hours)
 - 🎯 **Target specific lights** or control all lights at once
 - 🔧 **Customizable weather thresholds** for cold and rain detection
@@ -65,11 +66,43 @@ The application will:
 
 ## Weather to Light Mapping
 
-| Weather Condition | Light Behavior | Description |
-|------------------|----------------|-------------|
-| **Rain** ☔ | Blue/grey mood | Cool colors to reflect rainy weather |
-| **Cold** ❄️ | Warm orange/yellow | Warm colors for temperatures below threshold |
-| **Normal** ☀️ | Standard white light | Normal lighting for good weather |
+The application detects specific weather conditions and maps them to customizable colors:
+
+| Weather Condition | Default Color | Description |
+|------------------|---------------|-------------|
+| **Rain** ☔ | Light purple | Light precipitation detected |
+| **Showers** 🌧️ | Dark purple | Heavy precipitation/storms |
+| **Snow** ❄️ | White | Freezing precipitation |
+| **Sunshine** ☀️ | Yellow | Clear, warm weather |
+| **Overcast** ☁️ | Grey | Cloudy but no precipitation |
+| **Cold** 🥶 | Warm yellow | Very cold but dry |
+| **Clear** 🌤️ | Cool white | Normal clear weather |
+
+### Customizable Color Mapping
+
+You can define your own weather-to-color mappings in `application.properties`:
+
+```properties
+# Enable color mapping feature
+color-mapping.enabled=true
+
+# Define weather condition colors
+color-mapping.conditions.rain=light purple
+color-mapping.conditions.showers=dark purple  
+color-mapping.conditions.sunshine=yellow
+color-mapping.conditions.overcast=grey
+color-mapping.conditions.snow=white
+color-mapping.conditions.cold=warm yellow
+color-mapping.conditions.clear=cool white
+
+# Default color for unmapped conditions
+color-mapping.default-color=white
+```
+
+**Supported Color Formats:**
+- **Named colors**: `red`, `blue`, `light purple`, `warm yellow`, `storm grey`
+- **Hex colors**: `#FF0000`, `#00FF00`, `#FFFFFF`
+- **RGB values**: `255,0,0`, `0,255,0`, `128,128,128`
 
 *Current weather monitoring location: Zurich, Switzerland (47.3769°N, 8.5417°E)*
 
@@ -102,6 +135,14 @@ The application will:
 | `hue.auto-discover-bridge` | `true` | Enable automatic bridge discovery |
 | `hue.discovery-timeout` | `10` | Timeout (seconds) for bridge discovery |
 
+### Color Mapping Settings
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `color-mapping.enabled` | `true` | Enable weather-to-color mapping feature |
+| `color-mapping.default-color` | `white` | Default color for unmapped conditions |
+| `color-mapping.conditions.*` | *(see examples)* | Weather condition to color mappings |
+
 ## Usage Examples
 
 ### Testing Setup (Every Minute)
@@ -130,6 +171,20 @@ For locations with colder weather:
 
 ```bash
 ./gradlew bootRun --args="--hue.api-key=YOUR_API_KEY --weather.cold.threshold=0.0 --weather.rain.probability.threshold=20"
+```
+
+### Custom Color Mapping Setup
+Use your own weather-to-color preferences:
+
+```bash
+./gradlew bootRun --args="--hue.api-key=YOUR_API_KEY --color-mapping.conditions.rain=#4B0082 --color-mapping.conditions.sunshine=255,215,0 --color-mapping.conditions.snow=snow white"
+```
+
+### Disable Color Mapping (Legacy Mode)
+Use the original rain/cold logic instead of color mapping:
+
+```bash
+./gradlew bootRun --args="--hue.api-key=YOUR_API_KEY --color-mapping.enabled=false"
 ```
 
 ## Running Scripts
@@ -172,6 +227,17 @@ hue.discovery-timeout=10
 # Schedule Configuration
 schedule.interval=HOUR
 schedule.initial-delay-seconds=5
+
+# Color Mapping Configuration
+color-mapping.enabled=true
+color-mapping.default-color=white
+color-mapping.conditions.rain=light purple
+color-mapping.conditions.showers=dark purple
+color-mapping.conditions.sunshine=yellow
+color-mapping.conditions.overcast=grey
+color-mapping.conditions.snow=white
+color-mapping.conditions.cold=warm yellow
+color-mapping.conditions.clear=cool white
 
 # Logging
 logging.level.io.github.greenstevester.hue_mood_orologist=INFO
@@ -255,13 +321,21 @@ docker run --rm hue-mood-orologist:0.0.1-SNAPSHOT
 ## How It Works
 
 1. **Weather Monitoring**: The application queries the Open-Meteo API every configured interval
-2. **Condition Analysis**: Weather data is analyzed for rain probability/amount and temperature
-3. **Light Control**: Based on conditions, appropriate light colors are applied:
-   - Rain detected → Blue/grey colors
-   - Cold temperature → Warm orange/yellow colors  
-   - Normal conditions → Standard white lighting
-4. **Smart Targeting**: Lights can be controlled individually or as a group
-5. **Reliable Scheduling**: Uses Spring's TaskScheduler for precise timing
+2. **Condition Analysis**: Weather data is analyzed to determine specific conditions:
+   - **Snow**: Cold temperature + precipitation
+   - **Rain/Showers**: Precipitation detected (light vs heavy)
+   - **Sunshine**: High temperature, clear skies
+   - **Overcast**: Moderate precipitation probability
+   - **Cold/Clear**: Based on temperature thresholds
+3. **Color Mapping**: Weather conditions are mapped to colors using:
+   - **Configurable mappings** from `application.properties` (preferred)
+   - **Legacy logic** for rain/cold detection (fallback)
+4. **Light Control**: Colors are applied to targeted lights using:
+   - **Named colors** (e.g., "light purple", "warm yellow")
+   - **Hex values** (e.g., "#FF0000", "#4B0082")
+   - **RGB tuples** (e.g., "255,0,0", "128,128,128")
+5. **Smart Targeting**: Lights can be controlled individually or as a group
+6. **Reliable Scheduling**: Uses Spring's TaskScheduler for precise timing
 
 ## Location Customization
 
