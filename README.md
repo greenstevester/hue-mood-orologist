@@ -161,7 +161,7 @@ weather.rain.probability.threshold=25
 weather.rain.amount.threshold=0.15
 
 # Hue Bridge Configuration
-hue.api-key=5XluL53ccC4jfhghnWrtgK9SacCTUJ6cCijXPIqB
+hue.api-key=YOUR_API_KEY_HERE
 hue.bridge-ip=192.168.1.100
 hue.target-all-lights=false
 hue.target-light-name=Living Room
